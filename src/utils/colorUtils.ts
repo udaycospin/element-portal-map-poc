@@ -55,8 +55,6 @@ export function getColorScaleForParameter(
                 return prop.askingRate;
             case 'availableSF':
                 return prop.availableSF;
-            case 'rba':
-                return prop.rba;
             default:
                 return 0;
         }
@@ -86,9 +84,6 @@ export function getPropertyColor(
         case 'availableSF':
             value = property.availableSF;
             break;
-        case 'rba':
-            value = property.rba;
-            break;
         default:
             value = 0;
     }
@@ -108,10 +103,6 @@ export function getPropertyColor(
             // Red = More available space (competitive threat), Green = Less available space
             colorPosition = 1 - normalizedValue; // Invert so higher values are red
             break;
-        case 'rba':
-            // Red = Larger building (competitive advantage), Green = Smaller building
-            colorPosition = 1 - normalizedValue; // Invert so higher values are red
-            break;
         default:
             colorPosition = normalizedValue;
     }
@@ -121,6 +112,26 @@ export function getPropertyColor(
 
     // Convert to red-green gradient
     return getRedGreenGradientColor(colorPosition);
+}
+
+/**
+ * Gets the color for a property using cross-parameter logic
+ * If selectedParameter is 'availableSF', color is based on 'askingRate'
+ * If selectedParameter is 'askingRate', color is based on 'availableSF'
+ */
+export function getPropertyColorCrossParameter(
+    property: Property,
+    selectedParameter: ColorParameter,
+    properties: Property[]
+): string {
+    // Determine which parameter to use for coloring (opposite of selected)
+    const colorParameter: ColorParameter = selectedParameter === 'availableSF' ? 'askingRate' : 'availableSF';
+    
+    // Get color scale for the color parameter
+    const colorScale = getColorScaleForParameter(properties, colorParameter);
+    
+    // Get the color using the cross-parameter
+    return getPropertyColor(property, colorParameter, colorScale);
 }
 
 /**
@@ -184,7 +195,6 @@ export function formatParameterValue(value: number, parameter: ColorParameter): 
         case 'askingRate':
             return `$${value.toFixed(2)}/SF/year`;
         case 'availableSF':
-        case 'rba':
             return `${value.toLocaleString()} SF`;
         default:
             return value.toString();
@@ -200,8 +210,6 @@ export function getParameterDisplayName(parameter: ColorParameter): string {
             return 'Asking Rate';
         case 'availableSF':
             return 'Available SF';
-        case 'rba':
-            return 'Rentable Building Area';
         default:
             return parameter;
     }
@@ -323,8 +331,6 @@ function getPropertyValue(property: Property, parameter: ColorParameter): number
             return property.askingRate;
         case 'availableSF':
             return property.availableSF;
-        case 'rba':
-            return property.rba;
         default:
             return 0;
     }

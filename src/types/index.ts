@@ -59,7 +59,7 @@ export interface Property {
 /**
  * Available parameters for color-coding properties on the map
  */
-export type ColorParameter = 'askingRate' | 'availableSF' | 'rba';
+export type ColorParameter = 'askingRate' | 'availableSF';
 
 /**
  * Configuration for map view settings and display options

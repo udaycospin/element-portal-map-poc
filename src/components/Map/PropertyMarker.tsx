@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Property } from '../../types';
-import { getPropertyColor, getColorScaleForParameter, getLighterColor } from '../../utils';
+import { getPropertyColor, getColorScaleForParameter, getLighterColor, getPropertyColorCrossParameter } from '../../utils';
 import { useMapContext } from '../../context/MapContext';
 import { PropertyCalloutOverlay } from './PropertyCalloutOverlay';
 
@@ -45,11 +45,9 @@ export function PropertyMarker({ property, map, allProperties, clientPropertyId 
     useEffect(() => {
         if (!map) return;
 
-        // Get color and size for the marker
-        const colorScale = getColorScaleForParameter(allProperties, state.viewConfig.colorParameter);
-        const parameterValue = state.viewConfig.colorParameter === 'askingRate' ? property.askingRate :
-            state.viewConfig.colorParameter === 'availableSF' ? property.availableSF : property.rba;
-        const markerColor = getPropertyColor(property, state.viewConfig.colorParameter, colorScale);
+        // Get color and size for the marker using cross-parameter logic
+        const parameterValue = state.viewConfig.colorParameter === 'askingRate' ? property.askingRate : property.availableSF;
+        const markerColor = getPropertyColorCrossParameter(property, state.viewConfig.colorParameter, allProperties);
 
         // Calculate size relative to client property
         const isClientProperty = property.id === clientPropertyId;
@@ -61,8 +59,7 @@ export function PropertyMarker({ property, map, allProperties, clientPropertyId 
             markerSize = 40;
         } else if (clientProperty) {
             // Calculate size relative to client property value
-            const clientValue = state.viewConfig.colorParameter === 'askingRate' ? clientProperty.askingRate :
-                state.viewConfig.colorParameter === 'availableSF' ? clientProperty.availableSF : clientProperty.rba;
+            const clientValue = state.viewConfig.colorParameter === 'askingRate' ? clientProperty.askingRate : clientProperty.availableSF;
 
             const clientBaseSize = 40; // Client property baseline size
             const ratio = parameterValue / clientValue;
@@ -187,17 +184,8 @@ export function PropertyMarker({ property, map, allProperties, clientPropertyId 
     // Update marker appearance when parameter changes or selection state changes
     useEffect(() => {
         if (markerRef.current && map) {
-            const colorScale = getColorScaleForParameter(
-                allProperties,
-                state.viewConfig.colorParameter
-            );
-            const parameterValue = state.viewConfig.colorParameter === 'askingRate' ? property.askingRate :
-                state.viewConfig.colorParameter === 'availableSF' ? property.availableSF : property.rba;
-            const markerColor = getPropertyColor(
-                property,
-                state.viewConfig.colorParameter,
-                colorScale
-            );
+            const parameterValue = state.viewConfig.colorParameter === 'askingRate' ? property.askingRate : property.availableSF;
+            const markerColor = getPropertyColorCrossParameter(property, state.viewConfig.colorParameter, allProperties);
 
             const isClientProperty = property.id === clientPropertyId;
             const clientProperty = allProperties.find(p => p.id === clientPropertyId);
@@ -206,8 +194,7 @@ export function PropertyMarker({ property, map, allProperties, clientPropertyId 
             if (isClientProperty) {
                 markerSize = 40;
             } else if (clientProperty) {
-                const clientValue = state.viewConfig.colorParameter === 'askingRate' ? clientProperty.askingRate :
-                    state.viewConfig.colorParameter === 'availableSF' ? clientProperty.availableSF : clientProperty.rba;
+                const clientValue = state.viewConfig.colorParameter === 'askingRate' ? clientProperty.askingRate : clientProperty.availableSF;
 
                 const clientBaseSize = 40; // Client property baseline size
                 const ratio = parameterValue / clientValue;
