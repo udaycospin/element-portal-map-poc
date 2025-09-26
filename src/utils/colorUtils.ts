@@ -135,6 +135,84 @@ export function getPropertyColorCrossParameter(
 }
 
 /**
+ * Configuration for consistent marker sizing
+ */
+export interface MarkerSizeConfig {
+    /** Minimum marker size in pixels */
+    minSize: number;
+    /** Maximum marker size in pixels */
+    maxSize: number;
+    /** Client property baseline size */
+    clientSize: number;
+}
+
+/**
+ * Default marker size configuration
+ */
+export const DEFAULT_MARKER_SIZE_CONFIG: MarkerSizeConfig = {
+    minSize: 15,
+    maxSize: 80,
+    clientSize: 40
+};
+
+/**
+ * Gets normalized marker size for a property using consistent scaling across parameters
+ * Uses min-max normalization to ensure consistent visual scaling regardless of parameter
+ */
+export function getNormalizedMarkerSize(
+    property: Property,
+    parameter: ColorParameter,
+    properties: Property[],
+    clientPropertyId: string,
+    config: MarkerSizeConfig = DEFAULT_MARKER_SIZE_CONFIG
+): number {
+    const isClientProperty = property.id === clientPropertyId;
+    
+    if (isClientProperty) {
+        return config.clientSize;
+    }
+
+    // Get all values for the parameter to determine min/max range
+    const values = properties.map(prop => {
+        const value = parameter === 'askingRate' ? prop.askingRate : prop.availableSF;
+        // Filter out zero values for asking rate (missing data)
+        return parameter === 'askingRate' && value === 0 ? null : value;
+    }).filter(v => v !== null) as number[];
+
+    if (values.length === 0) {
+        return config.minSize;
+    }
+
+    const minValue = Math.min(...values);
+    const maxValue = Math.max(...values);
+    const propertyValue = parameter === 'askingRate' ? property.askingRate : property.availableSF;
+
+    // Handle edge cases
+    if (maxValue === minValue || propertyValue === 0) {
+        return config.minSize;
+    }
+
+    // Normalize the property value between 0 and 1
+    const normalizedValue = (propertyValue - minValue) / (maxValue - minValue);
+    
+    // Map normalized value to size range
+    const sizeRange = config.maxSize - config.minSize;
+    const calculatedSize = config.minSize + (normalizedValue * sizeRange);
+    const finalSize = Math.max(config.minSize, Math.min(config.maxSize, calculatedSize));
+
+    // Debug logging for size calculation
+    console.log(`Normalized size calculation for property ${property.id}:
+        Parameter: ${parameter}
+        Property value: ${propertyValue}
+        Min value: ${minValue}
+        Max value: ${maxValue}
+        Normalized: ${normalizedValue.toFixed(3)}
+        Final size: ${finalSize.toFixed(1)}px`);
+
+    return finalSize;
+}
+
+/**
  * Converts a position (0-1) to a red-green gradient color
  * 0 = Red (outperforming), 1 = Green (underperforming)
  */
