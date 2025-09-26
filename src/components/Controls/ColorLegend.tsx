@@ -1,6 +1,6 @@
 import React from 'react';
 import { Property } from '../../types';
-import { getColorScaleForParameter, formatParameterValue } from '../../utils';
+import { getColorScaleForParameter, formatParameterValue, getParameterDisplayName } from '../../utils';
 import { useMapContext } from '../../context/MapContext';
 
 interface ColorLegendProps {
@@ -13,7 +13,9 @@ export function ColorLegend({ properties, className = '' }: ColorLegendProps) {
 
     if (properties.length === 0) return null;
 
-    const colorScale = getColorScaleForParameter(properties, state.viewConfig.colorParameter);
+    // For cross-parameter logic: color is based on the opposite parameter
+    const colorParameter = state.viewConfig.colorParameter === 'availableSF' ? 'askingRate' : 'availableSF';
+    const colorScale = getColorScaleForParameter(properties, colorParameter);
 
     // Create gradient stops
     const gradientStops = [
@@ -24,23 +26,14 @@ export function ColorLegend({ properties, className = '' }: ColorLegendProps) {
         { offset: '100%', color: colorScale.getColor(colorScale.max) }
     ];
 
-    const getParameterDisplayName = (parameter: typeof state.viewConfig.colorParameter) => {
-        switch (parameter) {
-            case 'askingRate':
-                return 'Asking Rate';
-            case 'availableSF':
-                return 'Available SF';
-            case 'rba':
-                return 'Rentable Building Area';
-            default:
-                return parameter;
-        }
-    };
+    // Get display names for both parameters
+    const selectedParameterName = getParameterDisplayName(state.viewConfig.colorParameter);
+    const colorParameterName = getParameterDisplayName(colorParameter);
 
     return (
         <div className={`bg-white border border-gray-200 rounded-lg p-4 ${className}`}>
             <h3 className="text-sm font-medium text-gray-900 mb-3">
-                {getParameterDisplayName(state.viewConfig.colorParameter)} Scale
+                Color Scale: {colorParameterName}
             </h3>
 
             <div className="space-y-3">
@@ -56,13 +49,14 @@ export function ColorLegend({ properties, className = '' }: ColorLegendProps) {
 
                 {/* Scale labels */}
                 <div className="flex justify-between text-xs text-gray-600">
-                    <span>{formatParameterValue(colorScale.min, state.viewConfig.colorParameter)}</span>
-                    <span>{formatParameterValue(colorScale.max, state.viewConfig.colorParameter)}</span>
+                    <span>{formatParameterValue(colorScale.min, colorParameter)}</span>
+                    <span>{formatParameterValue(colorScale.max, colorParameter)}</span>
                 </div>
 
                 {/* Legend description */}
                 <div className="text-xs text-gray-500">
-                    <p>Red indicates lower values, green indicates higher values</p>
+                    <p>Marker size based on {selectedParameterName}</p>
+                    <p>Color based on {colorParameterName} (Red = lower, Green = higher)</p>
                 </div>
             </div>
         </div>

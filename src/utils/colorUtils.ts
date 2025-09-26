@@ -55,8 +55,6 @@ export function getColorScaleForParameter(
                 return prop.askingRate;
             case 'availableSF':
                 return prop.availableSF;
-            case 'rba':
-                return prop.rba;
             default:
                 return 0;
         }
@@ -86,9 +84,6 @@ export function getPropertyColor(
         case 'availableSF':
             value = property.availableSF;
             break;
-        case 'rba':
-            value = property.rba;
-            break;
         default:
             value = 0;
     }
@@ -108,10 +103,6 @@ export function getPropertyColor(
             // Red = More available space (competitive threat), Green = Less available space
             colorPosition = 1 - normalizedValue; // Invert so higher values are red
             break;
-        case 'rba':
-            // Red = Larger building (competitive advantage), Green = Smaller building
-            colorPosition = 1 - normalizedValue; // Invert so higher values are red
-            break;
         default:
             colorPosition = normalizedValue;
     }
@@ -121,6 +112,104 @@ export function getPropertyColor(
 
     // Convert to red-green gradient
     return getRedGreenGradientColor(colorPosition);
+}
+
+/**
+ * Gets the color for a property using cross-parameter logic
+ * If selectedParameter is 'availableSF', color is based on 'askingRate'
+ * If selectedParameter is 'askingRate', color is based on 'availableSF'
+ */
+export function getPropertyColorCrossParameter(
+    property: Property,
+    selectedParameter: ColorParameter,
+    properties: Property[]
+): string {
+    // Determine which parameter to use for coloring (opposite of selected)
+    const colorParameter: ColorParameter = selectedParameter === 'availableSF' ? 'askingRate' : 'availableSF';
+    
+    // Get color scale for the color parameter
+    const colorScale = getColorScaleForParameter(properties, colorParameter);
+    
+    // Get the color using the cross-parameter
+    return getPropertyColor(property, colorParameter, colorScale);
+}
+
+/**
+ * Configuration for consistent marker sizing
+ */
+export interface MarkerSizeConfig {
+    /** Minimum marker size in pixels */
+    minSize: number;
+    /** Maximum marker size in pixels */
+    maxSize: number;
+    /** Client property baseline size */
+    clientSize: number;
+}
+
+/**
+ * Default marker size configuration
+ */
+export const DEFAULT_MARKER_SIZE_CONFIG: MarkerSizeConfig = {
+    minSize: 15,
+    maxSize: 80,
+    clientSize: 40
+};
+
+/**
+ * Gets normalized marker size for a property using consistent scaling across parameters
+ * Uses min-max normalization to ensure consistent visual scaling regardless of parameter
+ */
+export function getNormalizedMarkerSize(
+    property: Property,
+    parameter: ColorParameter,
+    properties: Property[],
+    clientPropertyId: string,
+    config: MarkerSizeConfig = DEFAULT_MARKER_SIZE_CONFIG
+): number {
+    const isClientProperty = property.id === clientPropertyId;
+    
+    if (isClientProperty) {
+        return config.clientSize;
+    }
+
+    // Get all values for the parameter to determine min/max range
+    const values = properties.map(prop => {
+        const value = parameter === 'askingRate' ? prop.askingRate : prop.availableSF;
+        // Filter out zero values for asking rate (missing data)
+        return parameter === 'askingRate' && value === 0 ? null : value;
+    }).filter(v => v !== null) as number[];
+
+    if (values.length === 0) {
+        return config.minSize;
+    }
+
+    const minValue = Math.min(...values);
+    const maxValue = Math.max(...values);
+    const propertyValue = parameter === 'askingRate' ? property.askingRate : property.availableSF;
+
+    // Handle edge cases
+    if (maxValue === minValue || propertyValue === 0) {
+        return config.minSize;
+    }
+
+    // Normalize the property value between 0 and 1
+    const normalizedValue = (propertyValue - minValue) / (maxValue - minValue);
+    
+    // Map normalized value to size range
+    const sizeRange = config.maxSize - config.minSize;
+    const calculatedSize = config.minSize + (normalizedValue * sizeRange);
+    const finalSize = Math.max(config.minSize, Math.min(config.maxSize, calculatedSize));
+
+    // Debug logging for size calculation
+    console.log(`Normalized size calculation for property ${property.id}:
+        Parameter: ${parameter}
+        Property value: ${propertyValue}
+        Min value: ${minValue}
+        Max value: ${maxValue}
+        Normalized: ${normalizedValue.toFixed(3)}
+        Final size: ${finalSize.toFixed(1)}px`);
+
+    return finalSize;
 }
 
 /**
@@ -182,9 +271,8 @@ function interpolateColor(color1: string, color2: string, ratio: number): string
 export function formatParameterValue(value: number, parameter: ColorParameter): string {
     switch (parameter) {
         case 'askingRate':
-            return `$${value.toFixed(2)}/SF/year`;
+            return `$${value.toFixed(2)}/SF`;
         case 'availableSF':
-        case 'rba':
             return `${value.toLocaleString()} SF`;
         default:
             return value.toString();
@@ -200,8 +288,6 @@ export function getParameterDisplayName(parameter: ColorParameter): string {
             return 'Asking Rate';
         case 'availableSF':
             return 'Available SF';
-        case 'rba':
-            return 'Rentable Building Area';
         default:
             return parameter;
     }
@@ -323,8 +409,6 @@ function getPropertyValue(property: Property, parameter: ColorParameter): number
             return property.askingRate;
         case 'availableSF':
             return property.availableSF;
-        case 'rba':
-            return property.rba;
         default:
             return 0;
     }

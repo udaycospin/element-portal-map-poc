@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Property } from '../../types';
-import { getPropertyColor, getColorScaleForParameter, getLighterColor } from '../../utils';
+import { getLighterColor, getPropertyColorCrossParameter, getNormalizedMarkerSize } from '../../utils';
 import { useMapContext } from '../../context/MapContext';
 import { PropertyCalloutOverlay } from './PropertyCalloutOverlay';
 
@@ -45,54 +45,23 @@ export function PropertyMarker({ property, map, allProperties, clientPropertyId 
     useEffect(() => {
         if (!map) return;
 
-        // Get color and size for the marker
-        const colorScale = getColorScaleForParameter(allProperties, state.viewConfig.colorParameter);
-        const parameterValue = state.viewConfig.colorParameter === 'askingRate' ? property.askingRate :
-            state.viewConfig.colorParameter === 'availableSF' ? property.availableSF : property.rba;
-        const markerColor = getPropertyColor(property, state.viewConfig.colorParameter, colorScale);
-
-        // Calculate size relative to client property
-        const isClientProperty = property.id === clientPropertyId;
-        const clientProperty = allProperties.find(p => p.id === clientPropertyId);
-        let markerSize = 30; // Default fallback size
-
-        if (isClientProperty) {
-            // Client property gets fixed baseline size
-            markerSize = 40;
-        } else if (clientProperty) {
-            // Calculate size relative to client property value
-            const clientValue = state.viewConfig.colorParameter === 'askingRate' ? clientProperty.askingRate :
-                state.viewConfig.colorParameter === 'availableSF' ? clientProperty.availableSF : clientProperty.rba;
-
-            const clientBaseSize = 40; // Client property baseline size
-            const ratio = parameterValue / clientValue;
-
-            // Calculate proportional size with reasonable bounds
-            const minSize = 10;  // Minimum visible size
-            const maxSize = 120; // Maximum reasonable size
-
-            // Direct proportional scaling: if property is 2x client value, marker is 2x client size
-            const proportionalSize = clientBaseSize * ratio;
-
-            // Clamp to reasonable bounds but maintain proportionality
-            markerSize = Math.max(minSize, Math.min(maxSize, proportionalSize));
-
-            console.log(`Size calculation for ${property.name}:
-                Client value: ${clientValue}
-                Property value: ${parameterValue}  
-                Ratio: ${ratio.toFixed(2)}x
-                Proportional size: ${proportionalSize.toFixed(1)}px
-                Final size: ${markerSize.toFixed(1)}px`);
-        } else {
-            // Fallback if no client property found
-            markerSize = 30;
-        }
+        // Get color and size for the marker using cross-parameter logic
+        const markerColor = getPropertyColorCrossParameter(property, state.viewConfig.colorParameter, allProperties);
+        
+        // Use normalized sizing for consistent scaling across parameters
+        const markerSize = getNormalizedMarkerSize(
+            property,
+            state.viewConfig.colorParameter,
+            allProperties,
+            clientPropertyId
+        );
 
         // Apply minimal offset for overlapping markers (just enough to see all)
         const offsetCoords = calculateMinimalOffset(property, allProperties);
         const markerPosition = new google.maps.LatLng(offsetCoords.lat, offsetCoords.lng);
 
         // Create marker with appropriate icon and proper anchoring
+        const isClientProperty = property.id === clientPropertyId;
         let marker;
         if (isClientProperty) {
             // For client property: Create two markers - circle background + star foreground
@@ -187,41 +156,17 @@ export function PropertyMarker({ property, map, allProperties, clientPropertyId 
     // Update marker appearance when parameter changes or selection state changes
     useEffect(() => {
         if (markerRef.current && map) {
-            const colorScale = getColorScaleForParameter(
-                allProperties,
-                state.viewConfig.colorParameter
-            );
-            const parameterValue = state.viewConfig.colorParameter === 'askingRate' ? property.askingRate :
-                state.viewConfig.colorParameter === 'availableSF' ? property.availableSF : property.rba;
-            const markerColor = getPropertyColor(
+            const markerColor = getPropertyColorCrossParameter(property, state.viewConfig.colorParameter, allProperties);
+            
+            // Use normalized sizing for consistent scaling across parameters
+            const markerSize = getNormalizedMarkerSize(
                 property,
                 state.viewConfig.colorParameter,
-                colorScale
+                allProperties,
+                clientPropertyId
             );
 
             const isClientProperty = property.id === clientPropertyId;
-            const clientProperty = allProperties.find(p => p.id === clientPropertyId);
-            let markerSize = 30; // Default fallback size
-
-            if (isClientProperty) {
-                markerSize = 40;
-            } else if (clientProperty) {
-                const clientValue = state.viewConfig.colorParameter === 'askingRate' ? clientProperty.askingRate :
-                    state.viewConfig.colorParameter === 'availableSF' ? clientProperty.availableSF : clientProperty.rba;
-
-                const clientBaseSize = 40; // Client property baseline size
-                const ratio = parameterValue / clientValue;
-
-                // Calculate proportional size with reasonable bounds
-                const minSize = 10;  // Minimum visible size
-                const maxSize = 120; // Maximum reasonable size
-
-                // Direct proportional scaling: if property is 2x client value, marker is 2x client size
-                const proportionalSize = clientBaseSize * ratio;
-
-                // Clamp to reasonable bounds but maintain proportionality
-                markerSize = Math.max(minSize, Math.min(maxSize, proportionalSize));
-            }
 
             if (isClientProperty) {
                 // Update star marker

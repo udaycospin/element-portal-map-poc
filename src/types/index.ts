@@ -34,7 +34,7 @@ export interface Property {
     /** Available square footage for lease */
     availableSF: number;
 
-    /** Asking rental rate in dollars per square foot per year */
+    /** Asking rental rate in dollars per square foot */
     askingRate: number;
 
     /** Building classification grade (A, B, or C) */
@@ -59,7 +59,7 @@ export interface Property {
 /**
  * Available parameters for color-coding properties on the map
  */
-export type ColorParameter = 'askingRate' | 'availableSF' | 'rba';
+export type ColorParameter = 'askingRate' | 'availableSF';
 
 /**
  * Configuration for map view settings and display options

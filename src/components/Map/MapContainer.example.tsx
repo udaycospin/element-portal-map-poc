@@ -169,7 +169,7 @@ export function MapContainerExample() {
                         </div>
                         <div>
                             <span className="font-medium text-gray-700">Asking Rate:</span>
-                            <p className="text-gray-600">${selectedProperty.askingRate}/SF/year</p>
+                            <p className="text-gray-600">${selectedProperty.askingRate}/SF</p>
                         </div>
                         <div>
                             <span className="font-medium text-gray-700">Available SF:</span>

@@ -10,7 +10,7 @@ This module provides comprehensive utilities for calculating marker colors based
 
 ## 📊 Supported Parameters
 
-- `askingRate`: Rental rate per square foot per year
+- `askingRate`: Rental rate per square foot
 - `availableSF`: Available square footage for lease
 - `rba`: Rentable Building Area
 

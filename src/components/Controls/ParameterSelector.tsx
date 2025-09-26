@@ -10,7 +10,7 @@ interface ParameterSelectorProps {
 export function ParameterSelector({ className = '' }: ParameterSelectorProps) {
     const { state, updateViewConfig } = useMapContext();
 
-    const parameters: ColorParameter[] = ['askingRate', 'availableSF', 'rba'];
+    const parameters: ColorParameter[] = ['askingRate', 'availableSF'];
 
     const handleParameterChange = (parameter: ColorParameter) => {
         updateViewConfig({ colorParameter: parameter });

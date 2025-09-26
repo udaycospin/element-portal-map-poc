@@ -151,9 +151,9 @@ export class PropertyCalloutOverlay {
             const pixelX = (worldCoordinate.x - swPoint.x) / (nePoint.x - swPoint.x) * mapWidth;
             const pixelY = (worldCoordinate.y - nePoint.y) / (swPoint.y - nePoint.y) * mapHeight;
 
-            // Position the callout
-            const calloutWidth = 170;
-            const calloutHeight = 60;
+            // Position the callout (increased height for two parameters)
+            const calloutWidth = 180;
+            const calloutHeight = 80;
 
             let left = pixelX - (calloutWidth / 2);
             let top = pixelY - calloutHeight - 10;
@@ -194,46 +194,28 @@ export class PropertyCalloutOverlay {
 
     updateColorParameter(colorParameter: ColorParameter) {
         this.colorParameter = colorParameter;
-        if (this.div) {
-            this.renderCallout(); // Re-render with new parameter
-        }
+        // No need to re-render since we always show both parameters
+        // Keeping this method for consistency with existing API
     }
 
     private renderCallout() {
         if (!this.div) return;
 
-        // Get the parameter label and value
-        const getParameterInfo = () => {
-            switch (this.colorParameter) {
-                case 'askingRate':
-                    return {
-                        label: 'Asking Rate',
-                        value: this.property.askingRate > 0
-                            ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(this.property.askingRate)
-                            : 'N/A'
-                    };
-                case 'availableSF':
-                    return {
-                        label: 'Available SF',
-                        value: new Intl.NumberFormat('en-US').format(this.property.availableSF) + ' SF'
-                    };
-                case 'rba':
-                    return {
-                        label: 'RBA',
-                        value: new Intl.NumberFormat('en-US').format(this.property.rba) + ' SF'
-                    };
-                default:
-                    return {
-                        label: 'Available SF',
-                        value: new Intl.NumberFormat('en-US').format(this.property.availableSF) + ' SF'
-                    };
-            }
+        // Always show both parameters
+        const askingRateInfo = {
+            label: 'Asking Rate',
+            value: this.property.askingRate > 0
+                ? `$${this.property.askingRate.toFixed(2)}/SF`
+                : 'N/A'
         };
 
-        const paramInfo = getParameterInfo();
+        const availableSFInfo = {
+            label: 'Available SF',
+            value: new Intl.NumberFormat('en-US').format(this.property.availableSF) + ' SF'
+        };
 
         this.div.innerHTML = `
-            <div style="background: white; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 1px solid #e5e7eb; padding: 8px 12px; min-width: 140px; max-width: 200px; position: relative; font-family: system-ui, -apple-system, sans-serif;">
+            <div style="background: white; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 1px solid #e5e7eb; padding: 8px 12px; min-width: 160px; max-width: 220px; position: relative; font-family: system-ui, -apple-system, sans-serif;">
                 <!-- Arrow pointing down -->
                 <div style="position: absolute; bottom: 0; left: 50%; transform: translate(-50%, 100%);">
                     <div style="width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 6px solid white;"></div>
@@ -243,15 +225,23 @@ export class PropertyCalloutOverlay {
                 </div>
 
                 <!-- Property name -->
-                <div style="font-weight: 600; color: #111827; font-size: 13px; line-height: 1.2; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                <div style="font-weight: 600; color: #111827; font-size: 13px; line-height: 1.2; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                     ${this.property.name}
                 </div>
 
-                <!-- Parameter value -->
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 11px; font-weight: 500; color: #6b7280;">${paramInfo.label}:</span>
+                <!-- Asking Rate -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+                    <span style="font-size: 11px; font-weight: 500; color: #6b7280;">${askingRateInfo.label}:</span>
                     <span style="font-size: 12px; font-weight: 600; color: #111827;">
-                        ${paramInfo.value}
+                        ${askingRateInfo.value}
+                    </span>
+                </div>
+
+                <!-- Available SF -->
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 11px; font-weight: 500; color: #6b7280;">${availableSFInfo.label}:</span>
+                    <span style="font-size: 12px; font-weight: 600; color: #111827;">
+                        ${availableSFInfo.value}
                     </span>
                 </div>
             </div>

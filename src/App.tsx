@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { MapProvider, useMapContext } from './context/MapContext';
 import { MapContainer } from './components/Map';
 import { PropertyListView } from './components/PropertyList';
-import { ParameterSelector } from './components/Controls';
+import { ParameterSelector, CalloutToggle } from './components/Controls';
 import { ErrorBoundary } from './components/common';
 import { testProperties } from './data/testProperties';
 import { usePropertyData } from './hooks';
@@ -31,6 +31,8 @@ function AppContent() {
                             <div className="text-sm text-gray-500">
                                 {filteredProperties.length} properties
                             </div>
+                            {/* Callout Toggle */}
+                            <CalloutToggle />
                             {/* Parameter Filter - Top Right */}
                             <div className="w-64">
                                 <ParameterSelector />
