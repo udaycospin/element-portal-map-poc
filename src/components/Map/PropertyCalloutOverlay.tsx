@@ -205,7 +205,7 @@ export class PropertyCalloutOverlay {
         const askingRateInfo = {
             label: 'Asking Rate',
             value: this.property.askingRate > 0
-                ? `$${this.property.askingRate.toFixed(2)}/SF/yr`
+                ? `$${this.property.askingRate.toFixed(2)}/SF`
                 : 'N/A'
         };
 

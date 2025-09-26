@@ -271,7 +271,7 @@ function interpolateColor(color1: string, color2: string, ratio: number): string
 export function formatParameterValue(value: number, parameter: ColorParameter): string {
     switch (parameter) {
         case 'askingRate':
-            return `$${value.toFixed(2)}/SF/year`;
+            return `$${value.toFixed(2)}/SF`;
         case 'availableSF':
             return `${value.toLocaleString()} SF`;
         default:
